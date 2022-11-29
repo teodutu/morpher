@@ -21,7 +21,7 @@ from time import sleep
 
 
 
-def main(csource, function, config= "config/default_config.yaml"):
+def main(csource, function, arch='i386', config= "config/default_config.yaml"):
 
   runmode = 'runall' # runall, dfg_gen_only, mapper_only, sim_only
 
@@ -56,6 +56,20 @@ def main(csource, function, config= "config/default_config.yaml"):
 
   kernel = function
   appfolder, csourcefile = csource.rsplit('/', 1)
+  if arch == 'riscv64':
+    target = 'riscv64-linux-gnu'
+    # sysroot = '--sysroot=../riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14'
+    sysroot = ''
+    march = '-march=rv64gc'
+    ldflags = ''
+    # linker = '-fuse-ld=../riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14/bin/riscv64-unknown-elf-ld'
+    linker = '-fuse-ld=ld'
+  elif arch == 'i386':
+    target = 'i386-unknown-linux-gnu'
+    sysroot = ''
+    ldflags = '-m32'
+    march = ''
+    linker = ''
 
   # if not 'MORPHER_HOME' in os.environ:
   #   raise Exception('Set MORPHER_HOME directory as an environment variable (Ex: export MORPHER_HOME=/home/dmd/Workplace/Morphor/github_ecolab_repos)')
@@ -80,20 +94,18 @@ def main(csource, function, config= "config/default_config.yaml"):
   print('\n Kernel: %s \n C source: %s/benchmarks/%s \n CGRA arch: %s/json_arch/%s \n Config: %s\n Run mode: %s\n'% (kernel, DFG_GEN_HOME,csource, MAPPER_HOME, json_arch, config, runmode))
 
 
-  
-
 ##############################################################################################################################################
   if runmode == 'runall' or runmode == 'dfg_gen_only':
     print('-----Running Morpher_DFG_Generator-----\n')
     os.chdir(DFG_GEN_KERNEL)
-  
+    print(DFG_GEN_KERNEL)
     
     # os.system('./run_pass.sh %s 2 2048' % (kernel))
     os.system('rm memtraces/*')
     os.system('rm *.xml')
     os.system('rm *.dot')
     print('Generating IR..\n')
-    os.system('clang -D CGRA_COMPILER -target i386-unknown-linux-gnu -Wno-implicit-function-declaration -Wno-format -Wno-main-return-type -c -emit-llvm -O2 -fno-tree-vectorize -fno-unroll-loops %s -S -o %s.ll'%(csourcefile,kernel))
+    os.system('clang -D CGRA_COMPILER -target %s -Wno-implicit-function-declaration -Wno-format -Wno-main-return-type -c -emit-llvm -O2 -fno-tree-vectorize -fno-unroll-loops %s -S -o %s.ll'%(target, csourcefile, kernel))
     #os.system('clang -D CGRA_COMPILER -target i386-unknown-linux-gnu -Wno-implicit-function-declaration -Wno-format -Wno-main-return-type -c -emit-llvm -O2 -fno-vectorize -fno-slp-vectorize -fno-tree-vectorize -fno-inline -fno-unroll-loops %s -S -o %s.ll'%(csourcefile,kernel))
 
     print('Optimizing IR..\n')
@@ -102,22 +114,26 @@ def main(csource, function, config= "config/default_config.yaml"):
     print('Generating DFG (%s_PartPredDFG.xml/dot) and data layout (%s_mem_alloc.txt)..\n' % (kernel,kernel))
     os.system('opt -load %s/build/src/libdfggenPass.so -fn %s -nobanks %d -banksize %d -type %s  -skeleton %s_opt.ll -S -o %s_opt_instrument.ll' % (DFG_GEN_HOME,kernel,numberofbanks,banksize, dfg_type,kernel,kernel))
 
-
+    # sudo apt-get install graphviz
     os.system('dot -Tpdf %s_PartPredDFG.dot -o %s_PartPredDFG.pdf' % (kernel,kernel))
     os.system('cp '+kernel+'_PartPredDFG.xml '+ MAPPER_KERNEL )
     os.system('rm *.log')
 
     if json_arch == 'hycube_original_mem.json':
       print('\nCode instrumentation..\n')
-      os.system('clang -target i386-unknown-linux-gnu -c -emit-llvm -S %s/src/instrumentation/instrumentation.cpp -o instrumentation.ll' % DFG_GEN_HOME)
+      # For the command below to work: `sudo apt-get install libstdc++-10-dev-riscv64-cross`
+      os.system('clang -target %s -c -emit-llvm -S %s/src/instrumentation/instrumentation.cpp -o instrumentation.ll' % (target, DFG_GEN_HOME))
       if kernel=='kernel_symm':
-        os.system('clang -D CGRA_COMPILER -target i386-unknown-linux-gnu -c -emit-llvm -O2 -fno-tree-vectorize -fno-inline -fno-unroll-loops polybench.c -S -o polybench.ll')
+        os.system('clang -D CGRA_COMPILER -target %s -c -emit-llvm -O2 -fno-tree-vectorize -fno-inline -fno-unroll-loops polybench.c -S -o polybench.ll' % target)
         os.system('llvm-link %s_opt_instrument.ll instrumentation.ll polybench.ll -o final.ll' % (kernel))
       else:
         os.system('llvm-link %s_opt_instrument.ll instrumentation.ll -o final.ll' % (kernel))
 
       os.system('llc -filetype=obj final.ll -o final.o')
-      os.system('clang++ -m32 final.o -o final')
+      # TODO: add argument: --sysroot=/media/teo/2TB/Chestii/Poli/PhD/NUS/3DRA/riscv64-unknown-elf-gcc-10.1.0-2020.08.2-x86_64-linux-ubuntu14
+      # TODO: new version of riscv toolchain
+      print('clang++ -target %s %s %s final.o -o final' % (target, march, sysroot))
+      os.system('clang++ -target %s %s %s final.o -o final' % (target, march, sysroot))
 
 
   
@@ -128,7 +144,7 @@ def main(csource, function, config= "config/default_config.yaml"):
       os.system('cp '+kernel+'_mem_alloc.txt '+SIMULATOR_KERNEL )
       os.system('cp '+kernel+'_mem_alloc.txt '+MAPPER_KERNEL )
 
-    os.system('rm *.ll')
+    # os.system('rm *.ll')
   
 ##############################################################################################################################################
   if runmode == 'runall' or runmode == 'mapper_only':
@@ -205,9 +221,13 @@ def my_mkdir(dir):
 if __name__ == '__main__':
   csource = sys.argv[1]
   function = sys.argv[2]
-  if len(sys.argv) == 4:
-    config = sys.argv[3]
-    main(csource, function, config)
+  if (len(sys.argv) > 3):
+    arch = sys.argv[3]
   else:
-    main(csource, function)
+    arch = 'i386'
+  if len(sys.argv) == 5:
+    config = sys.argv[4]
+    main(csource, function, arch, config)
+  else:
+    main(csource, function, arch)
 
