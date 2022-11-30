@@ -35,7 +35,7 @@ follow https://github.com/llvm/llvm-project
     git checkout llvmorg-10.0.0
     mkdir build
     cd build
-    cmake -DLLVM_ENABLE_PROJECTS='polly;clang' -G "Unix Makefiles" ../llvm
+    cmake -DLLVM_ENABLE_PROJECTS='polly;clang' -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
     make -j4
     sudo make install
 
@@ -44,8 +44,8 @@ follow https://github.com/llvm/llvm-project
 
 ### 4. Test Environment Dependencies:
     Activate python3 virtual environment
-    pip install -r python_requirements.txt
-    sudo apt-get install gcc-multilib g++-multilib
+    pip3 install -r python_requirements.txt
+    sudo apt-get install gcc-multilib g++-multilib-7
 
 ## Compiling kernels:
 
@@ -56,7 +56,7 @@ Examples:
 
 1. Compile and verify simple kernels on hycube 4x4:
 
-``$python -u run_morpher.py morpher_benchmarks/array_add/array_add.c array_add``
+``$python3 -u run_morpher.py morpher_benchmarks/array_add/array_add.c array_add``
 
 Please refer the following workflow for more examples.
 
