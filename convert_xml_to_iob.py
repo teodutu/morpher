@@ -114,7 +114,7 @@ def get_cfg_from_xml_dict(xml: dict):
     nodes_dict = get_nodes_dict(dfg)
     modules = []
 
-    for idx, node in nodes_dict.items():
+    for _, node in nodes_dict.items():
         inputs, outputs = _get_inputs_outputs_as_params(nodes_dict, node['inputs'], node['outputs'])
         mod = Module(node['name'], inputs, outputs, 'TODO: body')
         modules.append(mod)
