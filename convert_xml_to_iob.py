@@ -19,10 +19,11 @@ class Param:
 
 
 class Module:
-    def __init__(self, name, inputs, outputs):
+    def __init__(self, name, inputs, outputs, body):
         self.name = name
         self.inputs = inputs
         self.outputs = outputs
+        self.body = body
 
     def __repr__(self):
         return str(self)
@@ -39,8 +40,8 @@ class Module:
         else:
             params = ''
 
-        module = f'module {self.name}()' + "{\n" + params + '\n#\nTODO\n}\n'
-        return module
+        return f'module {self.name}()' + "{\n" + params + '\n#\n' \
+            + self.body + '\n}\n'
 
     def _stringify_params(self, params):
         return '\n'.join([str(param) for param in params])
@@ -115,7 +116,7 @@ def get_cfg_from_xml_dict(xml: dict):
 
     for idx, node in nodes_dict.items():
         inputs, outputs = _get_inputs_outputs_as_params(nodes_dict, node['inputs'], node['outputs'])
-        mod = Module(node['name'], inputs, outputs)
+        mod = Module(node['name'], inputs, outputs, 'TODO: body')
         modules.append(mod)
 
     return modules
