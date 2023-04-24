@@ -129,8 +129,9 @@ def convert_xml_to_iob(xml_file, iob_file=None):
         iob_file = xml_file.replace('.xml', '.iob')
 
     cfg = get_cfg_from_xml_dict(xml_dict)
-    for module in cfg:
-        print(module)
+    with open(iob_file, 'w') as f:
+        for module in cfg:
+            f.write(str(module))
 
     # print_xml_dict(xml_dict)
 
