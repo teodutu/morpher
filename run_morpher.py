@@ -1,4 +1,4 @@
-  #!/usr/bin/env python
+  #!/usr/bin/env python3
 import sys
 import os
 import os.path
@@ -138,7 +138,7 @@ def main(csource, function, config= "config/default_config.yaml"):
     #os.system('rm *.bin')  
     if json_arch == 'hycube_original_mem.json':
       print('\nUpdating memory allocation..\n')
-      os.system('python %s/update_mem_alloc.py %s/json_arch/%s %s_mem_alloc.txt %d %d %s' % (MAPPER_HOME,MAPPER_HOME, json_arch_before_memupdate,kernel,banksize,numberofbanks, json_arch))
+      os.system('python3 %s/update_mem_alloc.py %s/json_arch/%s %s_mem_alloc.txt %d %d %s' % (MAPPER_HOME,MAPPER_HOME, json_arch_before_memupdate,kernel,banksize,numberofbanks, json_arch))
       os.system('%s/build/src/cgra_xml_mapper -d %s_PartPredDFG.xml -x 4 -y 4 -j %s -i %d -t HyCUBE_4REG -m %d' % (MAPPER_HOME,kernel,json_arch, init_II, mapping_method))
 
       os.chdir(SIMULATOR_KERNEL)
