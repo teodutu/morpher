@@ -1,8 +1,12 @@
+#! /bin/bash
+
+set -e
+
 cd Morpher_DFG_Generator
 mkdir build
 cd build
 cmake ..
-make  -j 2
+make all -j
 cd ../../Morpher_CGRA_Mapper
 mkdir build
 cd build
